@@ -1,3 +1,5 @@
+from metrics import increment_jobs_failed
+from metrics import increment_jobs_processed
 from ai import run_ai
 from config import DEAD_LETTER_KEY
 from config import JOB_QUEUE_KEY
@@ -6,6 +8,7 @@ from config import MAX_RETRIES
 from task_queue import get_redis, dequeue_job, store_result
 import asyncio
 from models import Job
+
 
 async def process_job(r, job: Job):
     try:
@@ -17,9 +20,11 @@ async def process_job(r, job: Job):
         job.status = "completed"
         job.payload["result"] = result
         await store_result(r,job)
+        await increment_jobs_processed(r)
     except Exception as e:
         print(f"Error: {e}")
         job.retries += 1
+
         if job.retries < MAX_RETRIES:
             wait = BACKOFF_BASE ** job.retries
             await asyncio.sleep(wait)
@@ -28,6 +33,7 @@ async def process_job(r, job: Job):
             job.status = "failed"
             await r.lpush(DEAD_LETTER_KEY, job.model_dump_json())
             await store_result(r, job)
+            await increment_jobs_failed(r)
 
 async def worker_loop():
     r = await get_redis()

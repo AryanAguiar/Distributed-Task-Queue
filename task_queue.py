@@ -2,6 +2,7 @@ import redis.asyncio as redis
 from config import REDIS_URL, JOB_QUEUE_KEY, JOB_RESULTS_KEY, JOB_RESULT_TTL
 from models import Job
 
+
 async def get_redis():
     return await redis.from_url(REDIS_URL, decode_responses=True)
 

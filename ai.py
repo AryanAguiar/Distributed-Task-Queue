@@ -2,6 +2,7 @@ import httpx
 from groq import AsyncGroq
 from config import GROQ_API_KEY, GEMINI_API_KEY
 
+
 def build_prompt(job_type:str, payload: dict):
     if job_type == "summarise":
         return f"Summarise the following text: {payload.get('text')}"
