@@ -1,4 +1,4 @@
-from config import JOB_QUEUE_KEY
+from config import JOB_QUEUE_KEY, validate
 from fastapi import HTTPException, FastAPI, Depends, Request
 from task_queue import get_result, enqueue_job, get_redis
 from models import JobRequest, Job
@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from prometheus_client import make_asgi_app
 from metrics import get_metrics, queue_depth_gauge
 
+validate()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,5 +46,13 @@ async def get_queue_depth(r=Depends(get_r)):
 @app.get("/metrics/jobs")
 async def job_metrics(r=Depends(get_r)):
     return await get_metrics(r)
+
+@app.get("/health")
+async def health(r=Depends(get_r)):
+    try:
+        await r.ping()
+        return {"status": "ok", "redis": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Redis unavailable: {str(e)}")
 
 # run with: uvicorn main:app --reload
