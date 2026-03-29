@@ -1,3 +1,4 @@
+from task_queue import refresh_lock
 from task_queue import release_lock, acquire_lock, get_redis, dequeue_job, store_result
 from metrics import increment_jobs_failed, increment_jobs_processed
 from ai import run_ai
@@ -15,12 +16,23 @@ def handle_shutdown(signum):
     logger.info("Shutdown signal received, finishing current job...", signal=signum)
     shutdown_event.set()
 
+async def renew_lock_loop(r, job_id: str, interval: int = 15):
+    try:
+        while True:
+            await asyncio.sleep(interval)
+            await refresh_lock(r, job_id)
+    except asyncio.CancelledError:
+        logger.info("Lock renewal cancelled", job_id=job_id)
+        pass
+
 
 async def process_job(r, job: Job):
     acquired = await acquire_lock(r, job.id)
     if not acquired:
         logger.warning("Job already being processed by another worker", job_id=job.id)
         return
+
+    renewer_task = asyncio.create_task(renew_lock_loop(r, job.id))
 
     try:
         job.status = "processing"
@@ -45,6 +57,7 @@ async def process_job(r, job: Job):
             await store_result(r, job)
             await increment_jobs_failed(r)
     finally: 
+        renewer_task.cancel()
         await release_lock(r, job.id)
 
 async def worker_loop():

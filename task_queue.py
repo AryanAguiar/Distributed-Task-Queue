@@ -6,7 +6,6 @@ from models import Job
 LOCK_PREFIX = "job:lock:"
 
 async def acquire_lock(r, job_id: str, ttl: int = 30) -> bool:
-    """Returns True if lock acquired, False if already locked."""
     key = f"{LOCK_PREFIX}{job_id}"
     return await r.set(key, "1", ex=ttl, nx=True)
 
@@ -14,7 +13,6 @@ async def release_lock(r, job_id: str):
     await r.delete(f"{LOCK_PREFIX}{job_id}")
 
 async def refresh_lock(r, job_id: str, ttl: int = 30):
-    """Call this periodically for long-running jobs."""
     await r.expire(f"{LOCK_PREFIX}{job_id}", ttl)
 
 async def get_redis():
