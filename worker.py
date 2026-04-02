@@ -1,4 +1,4 @@
-from platform import platform
+import platform
 from task_queue import refresh_lock
 from task_queue import release_lock, acquire_lock, get_redis, dequeue_job, store_result
 from metrics import increment_jobs_failed, increment_jobs_processed
