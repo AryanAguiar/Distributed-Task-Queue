@@ -32,11 +32,16 @@ async def call_gemini(job_type: str, payload: dict):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={GEMINI_API_KEY}"
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json = {
-          "contents": [{"parts": [{"text": prompt}]}]
+        response = await client.post(url, json={
+            "contents": [{"parts": [{"text": prompt}]}]
         })
+        response.raise_for_status()
         data = response.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise ValueError("Gemini returned no candidates (possible content filter)")
+        return candidates[0]["content"]["parts"][0]["text"]
+
     
 
 async def run_ai(job_type: str, payload: dict):

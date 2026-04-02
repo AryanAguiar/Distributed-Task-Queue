@@ -6,10 +6,11 @@ import uuid
 class JobRequest(BaseModel):
     type: str
     payload: dict
+    use_ai: bool = False
     
     @field_validator('type')
     def type_must_be_known(cls, v):
-        allowed = {"summarise", "validate", 'translate'}
+        allowed = {"summarise", "validate", 'translate', 'echo', 'reverse', 'wordcount'}
         if not v in allowed:
             raise ValueError(f"Unknown job type: {v}")
         return v

@@ -14,16 +14,20 @@ VISIBILITY_TIMEOUT = 30
 MAX_RETRIES = 3
 BACKOFF_BASE = 2
 
+AI_ENABLED = os.getenv("AI_ENABLED", "false").lower() == "true"
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
 def validate():
     missing = []
-    if not GROQ_API_KEY:
-        missing.append("GROQ_API_KEY")
-    if not GEMINI_API_KEY:
-        missing.append("GEMINI_API_KEY")
+    if  AI_ENABLED:
+        if not GROQ_API_KEY:
+            missing.append("GROQ_API_KEY")
+        if not GEMINI_API_KEY:
+            missing.append("GEMINI_API_KEY")
+            
     if missing:
         print(f"Missing required environment variables: {', '.join(missing)}")
         sys.exit(1)
