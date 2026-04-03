@@ -19,6 +19,9 @@ AI_ENABLED = os.getenv("AI_ENABLED", "false").lower() == "true"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+QUEUE_HIGH = "jobs:queue:high"
+QUEUE_LOW = "jobs:queue:low"
+QUEUE_NORMAL = "jobs:queue:normal"
 
 def validate():
     missing = []
@@ -32,5 +35,3 @@ def validate():
         print(f"Missing required environment variables: {', '.join(missing)}")
         sys.exit(1)
 
-# Call validate() explicitly at startup (in main.py / worker.py)
-# rather than at import time, so tests and other imports don't crash.

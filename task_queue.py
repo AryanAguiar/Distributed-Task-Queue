@@ -1,5 +1,5 @@
 import redis.asyncio as redis
-from config import REDIS_URL, JOB_QUEUE_KEY, JOB_RESULT_TTL
+from config import REDIS_URL, JOB_QUEUE_KEY, JOB_RESULT_TTL, QUEUE_HIGH, QUEUE_LOW, QUEUE_NORMAL
 from models import Job
 
 
@@ -24,10 +24,16 @@ async def get_redis():
     return await redis.from_url(REDIS_URL, decode_responses=True)
 
 async def enqueue_job(r, job: Job):
-    await r.lpush(JOB_QUEUE_KEY, job.model_dump_json())
+    queue_map = {
+        "high": QUEUE_HIGH,
+        "low": QUEUE_LOW,
+        "normal": QUEUE_NORMAL
+    }
+    queue = queue_map.get(job.priority, QUEUE_NORMAL)
+    await r.lpush(queue, job.model_dump_json())
 
 async def dequeue_job(r):
-    result = await r.brpop(JOB_QUEUE_KEY, timeout=2)
+    result = await r.brpop([QUEUE_HIGH, QUEUE_NORMAL, QUEUE_LOW], timeout=2)
     if result:
         _, data = result
         return Job.model_validate_json(data)

@@ -7,11 +7,11 @@ logger = structlog.get_logger()
 
 def build_prompt(job_type:str, payload: dict):
     if job_type == "summarise":
-        return f"Summarise the following text: {payload.get('text')}"
+        return f"Summarise the following text DO NOT ADD ANY EXTRA NOTES: {payload.get('text')}"
     elif job_type == "translate":
-        return f"Translate the following text to {payload.get('language')}: {payload.get('text')}"
+        return f"Translate the following text to {payload.get('language')} ONLY TRANSLATE IT DO NOT ADD ANY EXTRA NOTES: {payload.get('text')}"
     elif job_type == "validate":
-        return f"Validate the following text: {payload.get('text')}"
+        return f"Validate the following text DO NOT ADD ANY EXTRA NOTES: {payload.get('text')}"
     else:
         return f"Process the following: {payload}"
 

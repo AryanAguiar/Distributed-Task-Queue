@@ -7,6 +7,7 @@ class JobRequest(BaseModel):
     type: str
     payload: dict
     use_ai: bool = False
+    priority: str = "normal"
     
     @field_validator('type')
     def type_must_be_known(cls, v):
@@ -27,4 +28,6 @@ class Job(BaseModel):
     payload: dict
     status: str = "pending"
     retries: int = 0
+    use_ai: bool = False
+    priority: str = "normal"
     created_at: str = Field(default_factory=lambda: datetime.now().isoformat())

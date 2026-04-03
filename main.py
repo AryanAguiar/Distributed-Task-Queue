@@ -25,7 +25,7 @@ async def get_r(request: Request):
 # submit job to enqueue
 @app.post('/jobs')
 async def create_job(job_request: JobRequest, r=Depends(get_r)):
-    job = Job(type=job_request.type, payload=job_request.payload)
+    job = Job(type=job_request.type, payload=job_request.payload, use_ai=job_request.use_ai, priority=job_request.priority)
     await enqueue_job(r, job)
     return {"job_id": job.id}
  
@@ -54,5 +54,3 @@ async def health(r=Depends(get_r)):
         return {"status": "ok", "redis": "connected"}
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Redis unavailable: {str(e)}")
-
-# run with: uvicorn main:app --reload

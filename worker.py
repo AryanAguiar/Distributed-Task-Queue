@@ -1,6 +1,5 @@
 import platform
-from task_queue import refresh_lock
-from task_queue import release_lock, acquire_lock, get_redis, dequeue_job, store_result
+from task_queue import refresh_lock, release_lock, acquire_lock, get_redis, dequeue_job, store_result
 from metrics import increment_jobs_failed, increment_jobs_processed
 from ai import run_ai
 from config import DEAD_LETTER_KEY, JOB_QUEUE_KEY, BACKOFF_BASE, MAX_RETRIES, AI_ENABLED
@@ -48,7 +47,7 @@ async def process_job(r, job: Job):
     try:
         job.status = "processing"
         await store_result(r, job)
-        if AI_ENABLED:
+        if AI_ENABLED and job.use_ai:
             result = await run_ai(job.type, job.payload)
         else:
             result = await process_job_sync(job.type, job.payload)
