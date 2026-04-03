@@ -1,5 +1,6 @@
 from prometheus_client import Gauge
  
+ 
 queue_depth_gauge = Gauge("queue_depth", "Current queue depth") 
 
 async def increment_jobs_processed(r):

@@ -2,6 +2,7 @@ import asyncio
 from task_queue import get_redis, enqueue_job
 from models import Job
 
+
 SCHEDULES = [
     {"type": "summarise", "payload": {"text": "daily report"}, "interval": 3600},
 ]

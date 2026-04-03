@@ -1,12 +1,12 @@
 import platform
 from task_queue import refresh_lock, release_lock, acquire_lock, get_redis, dequeue_job, store_result
 from metrics import increment_jobs_failed, increment_jobs_processed
-from ai import run_ai
-from config import DEAD_LETTER_KEY, JOB_QUEUE_KEY, BACKOFF_BASE, MAX_RETRIES, AI_ENABLED
+from config import DEAD_LETTER_KEY, JOB_QUEUE_KEY, BACKOFF_BASE, MAX_RETRIES
 import asyncio
 from models import Job
 import structlog
 import signal
+from handlers import process_job_payload
 
 
 logger = structlog.get_logger()
@@ -25,17 +25,6 @@ async def renew_lock_loop(r, job_id: str, interval: int = 15):
         logger.info("Lock renewal cancelled", job_id=job_id)
         pass
 
-async def process_job_sync(job_type: str, payload: dict) -> str:
-    if job_type == "echo":
-        return payload.get("text", "")
-    elif job_type == "reverse":
-        return payload.get("text", "")[::-1]
-    elif job_type == "wordcount":
-        text = payload.get("text", "")
-        return str(len(text.split()))
-    else:
-        return f"Unknown job type: {job_type}"
-
 async def process_job(r, job: Job):
     acquired = await acquire_lock(r, job.id)
     if not acquired:
@@ -47,10 +36,7 @@ async def process_job(r, job: Job):
     try:
         job.status = "processing"
         await store_result(r, job)
-        if AI_ENABLED and job.use_ai:
-            result = await run_ai(job.type, job.payload)
-        else:
-            result = await process_job_sync(job.type, job.payload)
+        result = await process_job_payload(job.type, job.payload, job.use_ai)
         job.status = "completed"
         job.payload["result"] = result
         await store_result(r,job)

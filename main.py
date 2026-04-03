@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from prometheus_client import make_asgi_app
 from metrics import get_metrics, queue_depth_gauge
 
+
 validate()
 
 @asynccontextmanager

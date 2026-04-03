@@ -3,6 +3,7 @@ from groq import AsyncGroq
 from config import GROQ_API_KEY, GEMINI_API_KEY
 import structlog
 
+
 logger = structlog.get_logger()
 
 def build_prompt(job_type:str, payload: dict):
@@ -17,20 +18,15 @@ def build_prompt(job_type:str, payload: dict):
 
 client = AsyncGroq(api_key=GROQ_API_KEY)
 
-async def call_groq(job_type: str, payload: dict):
-    prompt = build_prompt(job_type, payload)
+async def call_groq_prompt(prompt: str):
     response = await client.chat.completions.create(
         model="llama-3.3-70b-versatile", 
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+        messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
 
-async def call_gemini(job_type: str, payload: dict):
-    prompt = build_prompt(job_type, payload)
+async def call_gemini_prompt(prompt: str):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={GEMINI_API_KEY}"
-
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json={
             "contents": [{"parts": [{"text": prompt}]}]
@@ -42,12 +38,21 @@ async def call_gemini(job_type: str, payload: dict):
             raise ValueError("Gemini returned no candidates (possible content filter)")
         return candidates[0]["content"]["parts"][0]["text"]
 
-    
-
-async def run_ai(job_type: str, payload: dict):
+async def execute_ai_prompt(prompt: str):
     try:
-        return await call_groq(job_type, payload)
+        return await call_groq_prompt(prompt)
     except Exception as e:
         logger.warning("Groq failed, falling back to Gemini", error=str(e))
-        return await call_gemini(job_type, payload)
+        return await call_gemini_prompt(prompt)
 
+async def call_groq(job_type: str, payload: dict):
+    prompt = build_prompt(job_type, payload)
+    return await call_groq_prompt(prompt)
+
+async def call_gemini(job_type: str, payload: dict):
+    prompt = build_prompt(job_type, payload)
+    return await call_gemini_prompt(prompt)
+
+async def run_ai(job_type: str, payload: dict):
+    prompt = build_prompt(job_type, payload)
+    return await execute_ai_prompt(prompt)

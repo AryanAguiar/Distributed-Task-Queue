@@ -1,7 +1,62 @@
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 import uuid
+from typing import Literal, Optional
 
+
+
+class SummarisePayload(BaseModel):
+    text: str
+    max_words: int = 100
+    style: Literal["bullet", "paragraph"] = "paragraph"
+
+class ValidatePayload(BaseModel):
+    data: dict
+    rules: list[Literal["no_nulls", "email_format", "age_range", "phone_format"]]
+    strict: bool = False
+
+class TranslatePayload(BaseModel):
+    text: str
+    target_lang: str          
+    source_lang: str = "auto"
+    formality: Literal["formal", "informal"] = "formal"
+
+class WebhookDeliverPayload(BaseModel):
+    url: str
+    body: dict
+    method: Literal["POST", "PUT", "PATCH"] = "POST"
+    headers: dict[str, str] = {}
+    retry_on: list[int] = [429, 500, 502, 503, 504]
+
+class PDFExtractPayload(BaseModel):
+    source_url: str
+    extract: list[Literal["text", "tables", "metadata"]] = ["text"]
+    page_limit: Optional[int] = None
+
+class DataQualityPayload(BaseModel):
+    records: list[dict]
+    rules: list[Literal["no_nulls", "email_format", "age_range"]]
+
+class HealthCheckPayload(BaseModel):
+    urls: list[str]
+    timeout_seconds: int = 5
+    expected_status: int = 200
+
+class ReportGeneratePayload(BaseModel):
+    title: str
+    sections: list[str]
+    format: Literal["pdf", "xlsx"] = "pdf"
+
+JOB_PAYLOAD_MAP = {
+    "summarise":          SummarisePayload,
+    "validate":           ValidatePayload,
+    "translate":          TranslatePayload,
+    "webhook_deliver":    WebhookDeliverPayload,
+    "pdf_extract":        PDFExtractPayload,
+    "data_quality_check": DataQualityPayload,
+    "health_check_batch": HealthCheckPayload,
+    "report_generate":    ReportGeneratePayload,
+}
 
 class JobRequest(BaseModel):
     type: str
@@ -11,7 +66,7 @@ class JobRequest(BaseModel):
     
     @field_validator('type')
     def type_must_be_known(cls, v):
-        allowed = {"summarise", "validate", 'translate', 'echo', 'reverse', 'wordcount'}
+        allowed = set(JOB_PAYLOAD_MAP.keys()).union({'echo', 'reverse', 'wordcount'})
         if not v in allowed:
             raise ValueError(f"Unknown job type: {v}")
         return v
