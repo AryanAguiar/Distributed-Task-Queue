@@ -1,9 +1,11 @@
 version: "3.8"
+
 services:
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+
   api:
     build: .
     command: uvicorn main:app --host 0.0.0.0 --port 8000
@@ -15,16 +17,27 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
-  worker:
+
+  worker_normal:
     build: .
-    command: python worker.py
+    command: python -m workers.normal_worker
     depends_on:
       - redis
     env_file:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - AI_ENABLED=${AI_ENABLED}
+
+  worker_ai:
+    build: .
+    command: python -m workers.ai_worker
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
   scheduler:
     build: .
     command: python scheduler.py
@@ -34,4 +47,3 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - AI_ENABLED=${AI_ENABLED}

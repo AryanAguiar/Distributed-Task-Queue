@@ -23,6 +23,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 QUEUE_HIGH = "jobs:queue:high"
 QUEUE_LOW = "jobs:queue:low"
 QUEUE_NORMAL = "jobs:queue:normal"
+NORMAL_QUEUE = QUEUE_NORMAL  # alias for backward compatibility
+AI_QUEUE = "jobs:queue:ai"
 
 def validate():
     missing = []

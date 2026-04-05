@@ -4,7 +4,6 @@ import uuid
 from typing import Literal, Optional
 
 
-
 class SummarisePayload(BaseModel):
     text: str
     max_words: int = 100
@@ -47,16 +46,24 @@ class ReportGeneratePayload(BaseModel):
     sections: list[str]
     format: Literal["pdf", "xlsx"] = "pdf"
 
-JOB_PAYLOAD_MAP = {
-    "summarise":          SummarisePayload,
-    "validate":           ValidatePayload,
-    "translate":          TranslatePayload,
-    "webhook_deliver":    WebhookDeliverPayload,
+AI_JOB_PAYLOAD = {
     "pdf_extract":        PDFExtractPayload,
+    "report_generate":    ReportGeneratePayload,
+    "summarise":          SummarisePayload,
+    "translate":          TranslatePayload,
+}
+
+NORMAL_JOB_PAYLOAD = {
     "data_quality_check": DataQualityPayload,
     "health_check_batch": HealthCheckPayload,
-    "report_generate":    ReportGeneratePayload,
+    "validate":           ValidatePayload,
+    "webhook_deliver":    WebhookDeliverPayload,
 }
+
+JOB_PAYLOAD_MAP = {**AI_JOB_PAYLOAD, **NORMAL_JOB_PAYLOAD}
+
+AI_JOB_TYPES = set(AI_JOB_PAYLOAD.keys())
+NORMAL_JOB_TYPES = set(NORMAL_JOB_PAYLOAD.keys())
 
 class JobRequest(BaseModel):
     type: str
@@ -64,9 +71,18 @@ class JobRequest(BaseModel):
     use_ai: bool = False
     priority: str = "normal"
     
+    @field_validator('use_ai', mode='before')
+    @classmethod
+    def set_use_ai_for_known(cls, v, info):
+        job_type = info.data.get('type')
+        from models import AI_JOB_TYPES
+        if job_type in AI_JOB_TYPES:
+            return True
+        return v
+    
     @field_validator('type')
     def type_must_be_known(cls, v):
-        allowed = set(JOB_PAYLOAD_MAP.keys()).union({'echo', 'reverse', 'wordcount'})
+        allowed = set(JOB_PAYLOAD_MAP.keys())
         if not v in allowed:
             raise ValueError(f"Unknown job type: {v}")
         return v
@@ -86,3 +102,11 @@ class Job(BaseModel):
     use_ai: bool = False
     priority: str = "normal"
     created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+    @field_validator('use_ai', mode='before')
+    @classmethod
+    def set_use_ai_for_known_types(cls, v, info):
+        job_type = info.data.get('type')
+        if job_type in AI_JOB_TYPES:
+            return True
+        return v

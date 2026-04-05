@@ -1,20 +1,13 @@
-import platform
-from task_queue import refresh_lock, release_lock, acquire_lock, get_redis, dequeue_job, store_result
+from task_queue import get_queue_for_job_type, refresh_lock, release_lock, acquire_lock, store_result
 from metrics import increment_jobs_failed, increment_jobs_processed
-from config import DEAD_LETTER_KEY, JOB_QUEUE_KEY, BACKOFF_BASE, MAX_RETRIES
+from config import DEAD_LETTER_KEY, BACKOFF_BASE, MAX_RETRIES
 import asyncio
 from models import Job
 import structlog
-import signal
 from handlers import process_job_payload
 
 
 logger = structlog.get_logger()
-shutdown_event = asyncio.Event()
-
-def handle_shutdown(signum, frame):
-    logger.info("Shutdown signal received, finishing current job...", signal=signum)
-    shutdown_event.set()
 
 async def renew_lock_loop(r, job_id: str, interval: int = 15):
     try:
@@ -49,7 +42,8 @@ async def process_job(r, job: Job):
         if job.retries < MAX_RETRIES:
             wait = BACKOFF_BASE ** job.retries
             await asyncio.sleep(wait)
-            await r.lpush(JOB_QUEUE_KEY, job.model_dump_json())
+            queue = get_queue_for_job_type(job.type)
+            await r.lpush(queue, job.model_dump_json())
         else:
             job.status = "failed"
             await r.lpush(DEAD_LETTER_KEY, job.model_dump_json())
@@ -58,26 +52,3 @@ async def process_job(r, job: Job):
     finally: 
         renewer_task.cancel()
         await release_lock(r, job.id)
-
-async def worker_loop():
-    r = await get_redis()
-    try:    
-        while not shutdown_event.is_set():
-            job = await dequeue_job(r)
-            if job:
-                logger.info("Processing job", job_id=job.id)
-                await process_job(r, job)
-            else:
-                await asyncio.sleep(0.1)
-        logger.info("Worker shut down gracefully.")
-    finally:
-        await r.close()
-        
-if __name__ == "__main__":
-    from config import validate
-    validate()
-    signal.signal(signal.SIGINT, handle_shutdown)
-    if platform.system() != "Windows":
-        signal.signal(signal.SIGTERM, handle_shutdown)
-    logger.info("Worker running...")
-    asyncio.run(worker_loop())

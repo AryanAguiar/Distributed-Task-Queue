@@ -3,17 +3,29 @@ from task_queue import get_redis, enqueue_job
 from models import Job
 
 
+import time
+
 SCHEDULES = [
-    {"type": "summarise", "payload": {"text": "daily report"}, "interval": 3600},
+    
 ]
 
 async def schedule_loop():
     r = await get_redis()
+    last_run = {s["type"]: 0 for s in SCHEDULES}
+
     while True:
+        now = time.time()
         for schedule in SCHEDULES:
-            job = Job(type = schedule["type"], payload = schedule["payload"])
-            await enqueue_job(r, job)
-        await asyncio.sleep(60)
+            job_type = schedule["type"]
+            if now - last_run[job_type] >= schedule["interval"]:
+                job = Job(
+                    type=job_type, 
+                    payload=schedule["payload"],
+                    use_ai=True  
+                )
+                await enqueue_job(r, job)
+                last_run[job_type] = now
+        await asyncio.sleep(10)
 
 if __name__ == "__main__":
     from config import validate

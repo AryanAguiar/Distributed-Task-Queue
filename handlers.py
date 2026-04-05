@@ -3,8 +3,6 @@ import httpx
 from models import SummarisePayload, ValidatePayload, TranslatePayload, WebhookDeliverPayload, PDFExtractPayload, DataQualityPayload, HealthCheckPayload, ReportGeneratePayload, JOB_PAYLOAD_MAP
 from ai import run_ai, execute_ai_prompt
 from config import AI_ENABLED
-import httpx
-import re
 
 
 async def handle_summarise(payload: SummarisePayload) -> dict:
