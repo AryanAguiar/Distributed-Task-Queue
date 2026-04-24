@@ -26,6 +26,8 @@ QUEUE_NORMAL = "jobs:queue:normal"
 NORMAL_QUEUE = QUEUE_NORMAL  # alias for backward compatibility
 AI_QUEUE = "jobs:queue:ai"
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 def validate():
     missing = []
     if  AI_ENABLED:

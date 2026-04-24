@@ -1,8 +1,12 @@
-from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
-import uuid
 from typing import Literal, Optional
+from pydantic import BaseModel
+from datetime import datetime
+import uuid
 
+# Models extracted to separate files
+from app.schemas.service import ServiceHealthCheckPayload, HealthCheckPayload
+from app.schemas.incident import IncidentOpenPayload, IncidentResolvePayload, IncidentReportPayload, EscalationCheckPayload
+from app.schemas.alert import AlertDispatchPayload
 
 class SummarisePayload(BaseModel):
     text: str
@@ -36,11 +40,6 @@ class DataQualityPayload(BaseModel):
     records: list[dict]
     rules: list[Literal["no_nulls", "email_format", "age_range"]]
 
-class HealthCheckPayload(BaseModel):
-    urls: list[str]
-    timeout_seconds: int = 5
-    expected_status: int = 200
-
 class ReportGeneratePayload(BaseModel):
     title: str
     sections: list[str]
@@ -51,6 +50,7 @@ AI_JOB_PAYLOAD = {
     "report_generate":    ReportGeneratePayload,
     "summarise":          SummarisePayload,
     "translate":          TranslatePayload,
+    "incident_report":    IncidentReportPayload,
 }
 
 NORMAL_JOB_PAYLOAD = {
@@ -58,12 +58,19 @@ NORMAL_JOB_PAYLOAD = {
     "health_check_batch": HealthCheckPayload,
     "validate":           ValidatePayload,
     "webhook_deliver":    WebhookDeliverPayload,
+    "service_health_check": ServiceHealthCheckPayload,
+    "incident_open":      IncidentOpenPayload,
+    "alert_dispatch":     AlertDispatchPayload,
+    "escalation_check":   EscalationCheckPayload,
+    "incident_resolve":   IncidentResolvePayload,
 }
 
 JOB_PAYLOAD_MAP = {**AI_JOB_PAYLOAD, **NORMAL_JOB_PAYLOAD}
 
 AI_JOB_TYPES = set(AI_JOB_PAYLOAD.keys())
 NORMAL_JOB_TYPES = set(NORMAL_JOB_PAYLOAD.keys())
+
+from pydantic import Field, field_validator
 
 class JobRequest(BaseModel):
     type: str
@@ -75,7 +82,6 @@ class JobRequest(BaseModel):
     @classmethod
     def set_use_ai_for_known(cls, v, info):
         job_type = info.data.get('type')
-        from models import AI_JOB_TYPES
         if job_type in AI_JOB_TYPES:
             return True
         return v

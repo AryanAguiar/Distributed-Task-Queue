@@ -1,7 +1,7 @@
 from config import JOB_QUEUE_KEY, validate
 from fastapi import HTTPException, FastAPI, Depends, Request
-from task_queue import get_result, enqueue_job, get_redis
-from models import JobRequest, Job
+from app.queue.task_queue import get_result, enqueue_job, get_redis
+from app.schemas import JobRequest, Job
 from contextlib import asynccontextmanager
 from prometheus_client import make_asgi_app
 from metrics import get_metrics, queue_depth_gauge

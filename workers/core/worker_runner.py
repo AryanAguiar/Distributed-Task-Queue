@@ -1,7 +1,6 @@
-from task_queue import enqueue_job
+from app.queue.task_queue import enqueue_job, get_redis
 import asyncio
 import structlog
-from task_queue import get_redis
 
 
 logger = structlog.get_logger()

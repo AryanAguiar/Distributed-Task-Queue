@@ -20,7 +20,7 @@ services:
 
   worker_normal:
     build: .
-    command: python -m workers.normal_worker
+    command: python -m workers.core.normal_worker
     depends_on:
       - redis
     env_file:
@@ -30,7 +30,7 @@ services:
 
   worker_ai:
     build: .
-    command: python -m workers.ai_worker
+    command: python -m workers.core.ai_worker
     depends_on:
       - redis
     env_file:

@@ -1,7 +1,6 @@
 import redis.asyncio as redis
 from config import REDIS_URL, JOB_RESULT_TTL, QUEUE_HIGH, QUEUE_LOW, QUEUE_NORMAL, AI_QUEUE, NORMAL_QUEUE
-from models import Job, AI_JOB_TYPES
-
+from app.schemas import Job, AI_JOB_TYPES
 
 # Job type logic
 def get_queue_for_job_type(job_type: str) -> str:
@@ -23,7 +22,6 @@ async def refresh_lock(r, job_id: str, ttl: int = 30):
     result = await r.expire(f"{LOCK_PREFIX}{job_id}", ttl)
     if not result:
         raise RuntimeError(f"Lock lost for job {job_id}")
-
 
 # Redis logic
 async def get_redis():

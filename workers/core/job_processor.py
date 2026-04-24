@@ -1,10 +1,10 @@
-from task_queue import get_queue_for_job_type, refresh_lock, release_lock, acquire_lock, store_result
+from app.queue.task_queue import get_queue_for_job_type, refresh_lock, release_lock, acquire_lock, store_result
 from metrics import increment_jobs_failed, increment_jobs_processed
 from config import DEAD_LETTER_KEY, BACKOFF_BASE, MAX_RETRIES
 import asyncio
-from models import Job
+from app.schemas import Job
 import structlog
-from handlers import process_job_payload
+from app.handlers import process_job_payload
 
 
 logger = structlog.get_logger()

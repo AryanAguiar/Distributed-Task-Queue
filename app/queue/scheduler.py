@@ -1,7 +1,6 @@
 import asyncio
-from task_queue import get_redis, enqueue_job
-from models import Job
-
+from app.queue.task_queue import get_redis, enqueue_job
+from app.schemas import Job
 
 import time
 
